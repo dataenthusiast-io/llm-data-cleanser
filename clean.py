@@ -11,7 +11,7 @@ from langchain_core.runnables import RunnablePassthrough
 
 # Constants
 CHUNK_SIZE = 10  # Number of contacts per chunk
-INPUT_FILE = "input/<your-file>.csv"
+INPUT_FILE = "input/contacts.csv"
 OUTPUT_FILE = "output/cleaned_contacts.csv"
 LOG_FILE = "output/processing.log"
 
@@ -112,9 +112,9 @@ def process_chunks(chunks: List[List[Dict]], chain) -> List[Dict]:
         try:
             # Convert chunk to string format for LLM
             chunk_str = "\n".join([
-                f"Name: {c['Person - Name']}, "
-                f"Organization: {c['Person - Organization']}, "
-                f"Email: {c['Person - Email - Work']}"
+                f"Name: {c['name']}, "
+                f"Organization: {c['organization']}, "
+                f"Email: {c['email']}"
                 for c in chunk
             ])
             
