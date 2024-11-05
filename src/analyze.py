@@ -79,7 +79,17 @@ def save_analyzed_results(results: List[Dict], original_contacts: List[Dict], ou
     logger.info(f"Saving analyzed results to {output_file}")
     try:
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
-        results_lookup = {r['email']: r for r in results}
+        # Create a lookup dictionary with default values for missing results
+        results_lookup = {}
+        for r in results:
+            email = r.get('email')
+            if email:
+                results_lookup[email] = {
+                    'is_real': r.get('is_real', True),  # Default to True if missing
+                    'confidence_score': r.get('confidence_score', 0.5),
+                    'reason': r.get('reason', 'No issues found')
+                }
+        
         fieldnames = list(original_contacts[0].keys()) + ['is_real', 'confidence_score', 'reason']
         
         with open(output_file, 'w', newline='', encoding='utf-8') as f:
@@ -88,16 +98,18 @@ def save_analyzed_results(results: List[Dict], original_contacts: List[Dict], ou
             
             for contact in original_contacts:
                 email = contact['email']
+                # Get result with defaults if email not found
                 result = results_lookup.get(email, {
-                    'is_real': True, 
-                    'confidence_score': 0.5,  # Default moderate confidence
-                    'reason': 'No issues found'
+                    'is_real': True,
+                    'confidence_score': 0.5,
+                    'reason': 'No analysis available'
                 })
+                
                 row = {
                     **contact,
                     'is_real': result['is_real'],
                     'confidence_score': result['confidence_score'],
-                    'reason': result['reason'] if result['reason'] else 'No issues found'
+                    'reason': result['reason']
                 }
                 writer.writerow(row)
         
