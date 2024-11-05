@@ -13,9 +13,10 @@ This tool helps database administrators and data analysts clean their contact da
   - Obviously fake names
   - Test/dummy email patterns
   - Incomplete or suspicious data
+  - Organization name validation
 - Processes contacts in configurable batch sizes for efficiency
 - Comprehensive logging system
-- Outputs a new CSV with additional columns for test status and reasoning
+- Outputs a new CSV with additional columns for analysis results
 - Error handling and recovery mechanisms
 
 ## Prerequisites
@@ -27,15 +28,18 @@ This tool helps database administrators and data analysts clean their contact da
   - langchain-ollama
   - tqdm
   - pathlib
+  - pyyaml
 
 ## Installation
 
 1. Clone this repository:
 
 ```bash
-git clone [repository-url]
-cd data-cleanser
+git clone https://github.com/dataenthusiast-io/llm-data-cleanser.git
+cd llm-data-cleanser
 ```
+
+2. Install Ollama following instructions at https://ollama.ai/
 
 3. Install the required packages:
 
@@ -43,21 +47,49 @@ cd data-cleanser
 pip install -r requirements.txt
 ```
 
-4. Pull the llama3.2 model:
+## Quick Start
+
+The easiest way to start the application is using the provided start script:
 
 ```bash
-ollama pull llama3.2
+./start.sh
 ```
 
+This will:
+- Set up a Python virtual environment
+- Source the virtual environment
+- Install the required packages
+- Run the analysis and cleaning pipeline sequentially
+
+## Command Line Usage
+
+You can also use the application directly from the command line:
+
+1. For analyzing contacts:
+```bash
+python src/analyze.py --input input/contacts.csv --output output/analyzed_contacts.csv
+```
+
+2. For cleaning contacts:
+```bash
+python src/clean.py --input input/contacts.csv --output output/cleaned_contacts.csv
+```
 
 ## Configuration
 
-The following constants can be modified in `clean.py`:
+The application can be configured through several methods:
+- Environment variables
+- Command line arguments
+- Configuration files in the `src/prompts` directory
 
+Key configuration options:
 - `CHUNK_SIZE`: Number of contacts to process in each batch (default: 10)
-- `INPUT_FILE`: Path to input CSV file (default: "input/contacts.csv")
-- `OUTPUT_FILE`: Path for cleaned output CSV (default: "output/cleaned_contacts.csv")
+- `MODEL_NAME`: Ollama model to use (default: "llama3.2")
+- `INPUT_FILE`: Path for input file (default: "input/contacts.csv")
+- `ANALYZED_FILE`: Path for analyzed file (default: "output/analyzed_contacts.csv")
+- `CLEANED_FILE`: Path for cleaned file (default: "output/cleaned_contacts.csv")
 - `LOG_FILE`: Path for log file (default: "output/processing.log")
+- `PROMPT_FILE`: Path for prompt file (default: "src/prompts/analyze.yaml")
 
 ## Input File Format
 
@@ -66,24 +98,20 @@ The input CSV file should contain the following columns:
 - organization
 - email
 
-## Usage
-
-1. Place your input CSV file in the `input` directory
-2. Run the script:
-
-```bash
-python clean.py
-```
-
-3. Check the output directory for:
-- Cleaned CSV file with additional columns: `is_test` and `test_reason`
-- Processing log file
+Additional columns will be preserved in the output.
 
 ## Output Format
 
-The output CSV will contain all original columns plus:
-- `is_test`: Boolean indicating if the entry is likely a test contact
-- `test_reason`: Explanation for why the entry was flagged (if applicable)
+The application produces two types of output files:
+1. Analyzed contacts (`analyzed_contacts.csv`):
+   - All original columns
+   - `analysis_result`: Detailed analysis of the contact
+   - `confidence_score`: Confidence level of the analysis
+
+2. Cleaned contacts (`cleaned_contacts.csv`):
+   - All original columns
+   - `is_real`: Boolean indicating if the entry is likely a real contact
+   - `reason`: Explanation for why the entry was flagged (if applicable)
 
 ## Logging
 
@@ -92,8 +120,9 @@ The application maintains detailed logs including:
 - Number of contacts processed
 - Any errors or issues encountered
 - Processing status for each chunk
+- Web interface access logs
 
-Logs are written to both the console and a log file.
+Logs are written to both the console and log files in the `output` directory.
 
 ## Error Handling
 
@@ -102,6 +131,7 @@ The application includes robust error handling for:
 - CSV parsing
 - LLM processing
 - JSON parsing
+- Web interface errors
 - Individual chunk processing failures
 
 ## Contributing
