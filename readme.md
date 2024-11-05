@@ -55,20 +55,20 @@ ollama pull llama3.2
 The following constants can be modified in `clean.py`:
 
 - `CHUNK_SIZE`: Number of contacts to process in each batch (default: 10)
-- `INPUT_FILE`: Path to input CSV file (default: "input/people-5730288-126.csv")
+- `INPUT_FILE`: Path to input CSV file (default: "input/contacts.csv")
 - `OUTPUT_FILE`: Path for cleaned output CSV (default: "output/cleaned_contacts.csv")
 - `LOG_FILE`: Path for log file (default: "output/processing.log")
 
 ## Input File Format
 
 The input CSV file should contain the following columns:
-- Person - Name
-- Person - Organization
-- Person - Email - Work
+- name
+- organization
+- email
 
 ## Usage
 
-1. Place your input CSV file in the specified input location
+1. Place your input CSV file in the `input` directory
 2. Run the script:
 
 ```bash
