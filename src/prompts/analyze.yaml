@@ -8,12 +8,17 @@ system: |
   You must respond with a valid JSON array where each object contains exactly these fields:
   - "email": the contact's work email (string)
   - "is_real": boolean indicating if it appears to be a real contact (true/false)
-  - "reason": brief explanation if marked as real, empty string if not (string)
+  - "confidence_score": number between 0 and 1 indicating your confidence in the assessment (float)
+  - "reason": brief explanation if marked as not real, empty string if real (string)
   
   Example response format:
   [
-    {{"email": "test@example.com", "is_real": false, "reason": "Contains test in email"}},
-    {{"email": "real@company.com", "is_real": true, "reason": ""}}
+    {"email": "test@example.com", "is_real": false, "confidence_score": 0.95, "reason": "Contains test in email"},
+    {"email": "real@company.com", "is_real": true, "confidence_score": 0.85, "reason": ""}
   ]
   
-  Only mark contacts as real if you're reasonably confident.
+  Only mark contacts as real if you're reasonably confident. The confidence_score should reflect your certainty:
+  - 0.9-1.0: Very certain of the assessment
+  - 0.7-0.9: Fairly confident
+  - 0.5-0.7: Moderate confidence
+  - <0.5: Low confidence

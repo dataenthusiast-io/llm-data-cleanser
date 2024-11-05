@@ -1,21 +1,26 @@
 from pathlib import Path
 import sys
+import yaml
+from libs.utils import setup_logging, logger
+import csv
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
-import logging
-import csv
-from src.libs.utils import setup_logging
-from app import get_settings
+# Load config directly
+CONFIG_PATH = Path(__file__).parent / "config.yaml"
+with open(CONFIG_PATH, 'r') as f:
+    SETTINGS = yaml.safe_load(f)
 
-# Get settings
-SETTINGS = get_settings()
+# Convert relative paths to absolute paths from project root
+SETTINGS["LOG_FILE"] = str(project_root / SETTINGS["LOG_FILE"].lstrip("../"))
+SETTINGS["ANALYZED_FILE"] = str(project_root / SETTINGS["ANALYZED_FILE"].lstrip("../"))
+SETTINGS["CLEANED_FILE"] = str(project_root / SETTINGS["CLEANED_FILE"].lstrip("../"))
 
 def extract_real_contacts(analyzed_file: str, output_file: str):
     """Extract only real contacts and save to final cleaned CSV."""
-    logging.info(f"Extracting real contacts from {analyzed_file}")
+    logger.info(f"Extracting real contacts from {analyzed_file}")
     try:
         real_contacts = []
         
@@ -43,23 +48,23 @@ def extract_real_contacts(analyzed_file: str, output_file: str):
                 writer.writeheader()
                 writer.writerows(real_contacts)
             
-            logging.info(f"Saved {len(real_contacts)} real contacts to {output_file}")
+            logger.info(f"Saved {len(real_contacts)} real contacts to {output_file}")
         else:
-            logging.warning("No real contacts found to save")
+            logger.warning("No real contacts found to save")
             
     except Exception as e:
-        logging.error(f"Error extracting real contacts: {str(e)}")
+        logger.error(f"Error extracting real contacts: {str(e)}")
         raise
 
 def main():
     setup_logging(SETTINGS["LOG_FILE"])
-    logging.info("Starting contact cleaning")
+    logger.info("Starting contact cleaning")
     
     try:
         extract_real_contacts(SETTINGS["ANALYZED_FILE"], SETTINGS["CLEANED_FILE"])
-        logging.info(f"Cleaning complete. Clean contacts saved to {SETTINGS['CLEANED_FILE']}")
+        logger.info(f"Cleaning complete. Clean contacts saved to {SETTINGS['CLEANED_FILE']}")
     except Exception as e:
-        logging.error(f"Fatal error: {str(e)}")
+        logger.error(f"Fatal error: {str(e)}")
         raise
 
 if __name__ == "__main__":

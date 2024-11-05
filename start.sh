@@ -24,9 +24,6 @@ source .venv/bin/activate
 echo "Installing requirements..."
 pip install -r requirements.txt
 
-# Add project root to PYTHONPATH
-export PYTHONPATH="$PYTHONPATH:$(pwd)"
-
 # Run the analysis and cleaning pipeline
 echo "Starting analysis pipeline..."
 python src/analyze.py

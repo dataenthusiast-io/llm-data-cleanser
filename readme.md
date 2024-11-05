@@ -16,8 +16,9 @@ This tool helps database administrators and data analysts clean their contact da
   - Organization name validation
 - Processes contacts in configurable batch sizes for efficiency
 - Comprehensive logging system
-- Outputs a new CSV with additional columns for analysis results
+- Outputs analyzed and cleaned CSV files
 - Error handling and recovery mechanisms
+- Local processing using Ollama for data privacy
 
 ## Prerequisites
 
@@ -41,88 +42,81 @@ cd llm-data-cleanser
 
 2. Install Ollama following instructions at https://ollama.ai/
 
-3. Install the required packages:
-
-```bash
-pip install -r requirements.txt
-```
-
-## Quick Start
-
-The easiest way to start the application is using the provided start script:
+3. Run the start script which will set up everything automatically:
 
 ```bash
 ./start.sh
 ```
 
-This will:
-- Set up a Python virtual environment
-- Source the virtual environment
-- Install the required packages
+The start script will:
+- Create a Python virtual environment if it doesn't exist
+- Activate the virtual environment
+- Install all required packages
 - Run the analysis and cleaning pipeline sequentially
-
-## Command Line Usage
-
-You can also use the application directly from the command line:
-
-1. For analyzing contacts:
-```bash
-python src/analyze.py --input input/contacts.csv --output output/analyzed_contacts.csv
-```
-
-2. For cleaning contacts:
-```bash
-python src/clean.py --input input/contacts.csv --output output/cleaned_contacts.csv
-```
+- Deactivate the virtual environment when complete
 
 ## Configuration
 
-The application can be configured through several methods:
-- Environment variables
-- Command line arguments
-- Configuration files in the `src/prompts` directory
+The application is configured through a YAML file located at `src/config.yaml`:
 
-Key configuration options:
-- `CHUNK_SIZE`: Number of contacts to process in each batch (default: 10)
-- `MODEL_NAME`: Ollama model to use (default: "llama3.2")
-- `INPUT_FILE`: Path for input file (default: "input/contacts.csv")
-- `ANALYZED_FILE`: Path for analyzed file (default: "output/analyzed_contacts.csv")
-- `CLEANED_FILE`: Path for cleaned file (default: "output/cleaned_contacts.csv")
-- `LOG_FILE`: Path for log file (default: "output/processing.log")
-- `PROMPT_FILE`: Path for prompt file (default: "src/prompts/analyze.yaml")
+```yaml
+MODEL_NAME: mistral        # The Ollama model to use
+TEMPERATURE: 0.1          # Temperature setting for LLM responses
+CHUNK_SIZE: 5            # Number of contacts to process in each batch
+LOG_FILE: logs/app.log   # Path to log file
+INPUT_FILE: data/input/contacts.csv           # Input file path
+ANALYZED_FILE: data/processed/analyzed_contacts.csv  # Analysis output path
+CLEANED_FILE: data/processed/cleaned_contacts.csv    # Cleaned output path
+PROMPT_FILE: src/prompts/analyze.yaml         # Analysis prompt file path
+```
 
-## Input File Format
+## Input/Output Structure
 
-The input CSV file should contain the following columns:
+### Input File Format
+
+The input CSV file should contain the following required columns:
 - name
 - organization
 - email
 
-Additional columns will be preserved in the output.
-
-## Output Format
+### Output Files
 
 The application produces two types of output files:
+
 1. Analyzed contacts (`analyzed_contacts.csv`):
    - All original columns
-   - `analysis_result`: Detailed analysis of the contact
+   - `is_real`: Boolean indicating if the entry appears legitimate
    - `confidence_score`: Confidence level of the analysis
+   - `reason`: Explanation for the analysis result
 
 2. Cleaned contacts (`cleaned_contacts.csv`):
-   - All original columns
-   - `is_real`: Boolean indicating if the entry is likely a real contact
-   - `reason`: Explanation for why the entry was flagged (if applicable)
+   - Contains only entries marked as real contacts
+   - Includes only the essential columns:
+     - name
+     - organization
+     - email
+
+## Command Line Usage
+
+While the start script is recommended, you can run individual components directly:
+
+1. For analyzing contacts:
+```bash
+python src/analyze.py
+```
+
+2. For cleaning contacts:
+```bash
+python src/clean.py
+```
 
 ## Logging
 
-The application maintains detailed logs including:
+The application maintains detailed logs in the configured log file (`logs/app.log`), including:
 - Processing start/end times
 - Number of contacts processed
 - Any errors or issues encountered
 - Processing status for each chunk
-- Web interface access logs
-
-Logs are written to both the console and log files in the `output` directory.
 
 ## Error Handling
 

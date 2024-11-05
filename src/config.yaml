@@ -1,0 +1,8 @@
+MODEL_NAME: llama3.2
+TEMPERATURE: 0
+CHUNK_SIZE: 10
+LOG_FILE: ../logs/app.log
+INPUT_FILE: ../input/contacts.csv
+ANALYZED_FILE: ../output/analyzed_contacts.csv
+CLEANED_FILE: ../output/cleaned_contacts.csv
+PROMPT_FILE: prompts/analyze.yaml
