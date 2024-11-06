@@ -6,6 +6,7 @@ from typing import List, Dict
 import yaml
 from tqdm import tqdm
 import time
+from datetime import datetime
 
 # Global logger and progress bar
 logger = logging.getLogger('llm_cleanser')
@@ -32,17 +33,20 @@ class ColorFormatter(logging.Formatter):
         formatter = logging.Formatter(log_fmt, datefmt='%H:%M:%S')
         return formatter.format(record)
 
-def setup_logging(log_file: str) -> logging.Logger:
-    """Configure logging to both file and console."""
+def setup_logging(base_log_dir: str = "logs") -> logging.Logger:
+    """Configure logging to both file and console with timestamped log file."""
     # Clear any existing handlers
     logger.handlers.clear()
     
-    # Create log directory if it doesn't exist
-    log_dir = Path(log_file).parent
+    # Create timestamped log filename
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    log_dir = Path(base_log_dir)
     log_dir.mkdir(parents=True, exist_ok=True)
     
+    log_file = log_dir / f"llm_cleanser_{timestamp}.log"
+    
     # Set logging level
-    logger.setLevel(logging.DEBUG)  # Changed to DEBUG to show more details
+    logger.setLevel(logging.DEBUG)
     
     # File handler with detailed formatting
     file_handler = logging.FileHandler(log_file)
@@ -57,6 +61,7 @@ def setup_logging(log_file: str) -> logging.Logger:
     console_handler.setFormatter(ColorFormatter())
     logger.addHandler(console_handler)
     
+    logger.info(f"📝 Logging to: {log_file}")
     return logger
 
 def log_network_call(endpoint: str, prompt_preview: str = None, **kwargs):

@@ -42,7 +42,7 @@ def setup_llm_chain(prompt_file: str):
     prompt_config = load_prompt(prompt_file)
     prompt = ChatPromptTemplate.from_messages([
         ("system", prompt_config['system']),
-        ("human", "Please analyze these contacts: {contacts}")
+        ("human", "{contacts}")
     ])
 
     model = ChatOllama(
@@ -59,49 +59,40 @@ def setup_llm_chain(prompt_file: str):
     
     return chain
 
-def process_chunks(chunks: List[List[Dict]], chain) -> List[Dict]:
-    """Process each chunk through the LLM chain."""
-    results = []
-    logger.info("Starting chunk processing")
-    
-    for i, chunk in enumerate(tqdm(chunks, desc="Processing chunks")):
-        try:
-            chunk_str = json.dumps(chunk, indent=2)
-            response = chain.invoke(chunk_str)
-            chunk_results = parse_llm_response(response)
-            results.extend(chunk_results)
-            logger.debug(f"Processed chunk {i+1}/{len(chunks)}")
-        except Exception as e:
-            logger.error(f"Error processing chunk {i+1}: {str(e)}")
-            continue
-    
-    return results
-
-def save_analyzed_results(results: List[Dict], original_contacts: List[Dict], output_file: str):
-    """Save all analyzed results to CSV file."""
-    logger.info(f"Saving analyzed results to {output_file}")
+def save_chunk_results(chunk_results: List[Dict], original_contacts: List[Dict], output_file: str, first_chunk: bool = False):
+    """Save chunk results to CSV file, either creating new file or appending."""
+    logger.info(f"Saving chunk results to {output_file}")
     try:
         Path(output_file).parent.mkdir(parents=True, exist_ok=True)
-        # Create a lookup dictionary with default values for missing results
-        results_lookup = {}
-        for r in results:
-            email = r.get('email')
-            if email:
-                results_lookup[email] = {
-                    'is_real': r.get('is_real', True),  # Default to True if missing
-                    'confidence_score': r.get('confidence_score', 0.5),
-                    'reason': r.get('reason', 'No issues found')
-                }
         
+        # Create a lookup dictionary for the chunk results
+        results_lookup = {
+            r.get('email'): {
+                'is_real': r.get('is_real', True),
+                'confidence_score': r.get('confidence_score', 0.5),
+                'reason': r.get('reason', 'No issues found')
+            } for r in chunk_results if r.get('email')
+        }
+        
+        # Get emails from this chunk's results
+        chunk_emails = set(results_lookup.keys())
+        
+        # Filter original contacts to only those in this chunk
+        relevant_contacts = [
+            contact for contact in original_contacts 
+            if contact['email'] in chunk_emails
+        ]
+        
+        mode = 'w' if first_chunk else 'a'
         fieldnames = list(original_contacts[0].keys()) + ['is_real', 'confidence_score', 'reason']
         
-        with open(output_file, 'w', newline='', encoding='utf-8') as f:
+        with open(output_file, mode, newline='', encoding='utf-8') as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
-            writer.writeheader()
+            if first_chunk:
+                writer.writeheader()
             
-            for contact in original_contacts:
+            for contact in relevant_contacts:
                 email = contact['email']
-                # Get result with defaults if email not found
                 result = results_lookup.get(email, {
                     'is_real': True,
                     'confidence_score': 0.5,
@@ -116,10 +107,40 @@ def save_analyzed_results(results: List[Dict], original_contacts: List[Dict], ou
                 }
                 writer.writerow(row)
         
-        logger.info("Analyzed results saved successfully")
+        logger.info(f"Saved results for {len(relevant_contacts)} contacts")
     except Exception as e:
-        logger.error(f"Error saving analyzed results: {str(e)}")
+        logger.error(f"Error saving chunk results: {str(e)}")
         raise
+
+def process_chunks(chunks: List[List[Dict]], chain, original_contacts: List[Dict], output_file: str) -> None:
+    """Process each chunk through the LLM chain and save results immediately."""
+    logger.info("Starting chunk processing")
+    
+    for i, chunk in enumerate(tqdm(chunks, desc="Processing chunks")):
+        try:
+            # Filter chunk to only include relevant fields
+            filtered_chunk = [{
+                'name': contact.get('name', ''),
+                'email': contact.get('email', ''),
+                'organization': contact.get('organization', '')
+            } for contact in chunk]
+            
+            chunk_str = json.dumps(filtered_chunk, indent=2)
+            response = chain.invoke(chunk_str)
+            chunk_results = parse_llm_response(response)
+            
+            # Save results immediately after processing each chunk
+            save_chunk_results(
+                chunk_results, 
+                original_contacts, 
+                output_file, 
+                first_chunk=(i == 0)
+            )
+            
+            logger.debug(f"Processed and saved chunk {i+1}/{len(chunks)}")
+        except Exception as e:
+            logger.error(f"Error processing chunk {i+1}: {str(e)}")
+            continue
 
 def main():
     setup_logging(LOG_FILE)
@@ -129,8 +150,8 @@ def main():
         contacts = read_csv(INPUT_FILE)
         chunks = chunk_contacts(contacts, CHUNK_SIZE)
         chain = setup_llm_chain(PROMPT_FILE)
-        results = process_chunks(chunks, chain)
-        save_analyzed_results(results, contacts, ANALYZED_FILE)
+        # Modified to pass original contacts and output file
+        process_chunks(chunks, chain, contacts, ANALYZED_FILE)
         logger.info(f"Analysis complete. Results saved to {ANALYZED_FILE}")
     except Exception as e:
         logger.error(f"Fatal error: {str(e)}")
