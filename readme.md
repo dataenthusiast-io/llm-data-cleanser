@@ -40,20 +40,28 @@ git clone https://github.com/dataenthusiast-io/llm-data-cleanser.git
 cd llm-data-cleanser
 ```
 
-2. Install Ollama following instructions at https://ollama.ai/
+2. Run the setup script which will set up everything automatically:
 
-3. Run the start script which will set up everything automatically:
+```bash
+./setup.sh
+```
+
+The setup script will:
+- Check for Python 3 installation
+- Create a Python virtual environment if it doesn't exist
+- Install all required packages
+- Check for Ollama installation and install if needed
+- Pull the required LLM model specified in your .env file
+
+3. After setup is complete, you can run the pipeline using:
 
 ```bash
 ./start.sh
 ```
 
 The start script will:
-- Create a Python virtual environment if it doesn't exist
-- Activate the virtual environment
-- Install all required packages
 - Run the analysis and cleaning pipeline sequentially
-- Deactivate the virtual environment when complete
+- Output results to the output directory
 
 ## Configuration
 
@@ -62,8 +70,10 @@ The application is configured through a `.env` file located at the root of the p
 ```
 MODEL_NAME=llama3.2        # The Ollama model to use
 TEMPERATURE=0.1          # Temperature setting for LLM responses
-CHUNK_SIZE=5            # Number of contacts to process in each batch
+CHUNK_SIZE=10            # Number of contacts to process in each batch
 ```
+
+**Info:** We recommend setting the `CHUNK_SIZE` not > 25 to avoid token limit issues.
 
 ## Input/Output Structure
 
