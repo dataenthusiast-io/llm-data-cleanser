@@ -1,6 +1,5 @@
 from pathlib import Path
 import sys
-import yaml
 from libs.utils import setup_logging, logger
 import csv
 
@@ -8,15 +7,10 @@ import csv
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
-# Load config directly
-CONFIG_PATH = Path(__file__).parent / "config.yaml"
-with open(CONFIG_PATH, 'r') as f:
-    SETTINGS = yaml.safe_load(f)
-
-# Convert relative paths to absolute paths from project root
-SETTINGS["LOG_FILE"] = str(project_root / SETTINGS["LOG_FILE"].lstrip("../"))
-SETTINGS["ANALYZED_FILE"] = str(project_root / SETTINGS["ANALYZED_FILE"].lstrip("../"))
-SETTINGS["CLEANED_FILE"] = str(project_root / SETTINGS["CLEANED_FILE"].lstrip("../"))
+# Constants
+LOG_FILE = str(project_root / "logs/app.log")
+ANALYZED_FILE = str(project_root / "output/analyzed_contacts.csv")
+CLEANED_FILE = str(project_root / "output/cleaned_contacts.csv")
 
 def extract_real_contacts(analyzed_file: str, output_file: str):
     """Extract only real contacts and save to final cleaned CSV."""
@@ -57,12 +51,12 @@ def extract_real_contacts(analyzed_file: str, output_file: str):
         raise
 
 def main():
-    setup_logging(SETTINGS["LOG_FILE"])
+    setup_logging(LOG_FILE)
     logger.info("Starting contact cleaning")
     
     try:
-        extract_real_contacts(SETTINGS["ANALYZED_FILE"], SETTINGS["CLEANED_FILE"])
-        logger.info(f"Cleaning complete. Clean contacts saved to {SETTINGS['CLEANED_FILE']}")
+        extract_real_contacts(ANALYZED_FILE, CLEANED_FILE)
+        logger.info(f"Cleaning complete. Clean contacts saved to {CLEANED_FILE}")
     except Exception as e:
         logger.error(f"Fatal error: {str(e)}")
         raise

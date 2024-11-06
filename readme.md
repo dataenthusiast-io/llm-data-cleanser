@@ -57,17 +57,12 @@ The start script will:
 
 ## Configuration
 
-The application is configured through a YAML file located at `src/config.yaml`:
+The application is configured through a `.env` file located at the root of the project:
 
-```yaml
-MODEL_NAME: mistral        # The Ollama model to use
-TEMPERATURE: 0.1          # Temperature setting for LLM responses
-CHUNK_SIZE: 5            # Number of contacts to process in each batch
-LOG_FILE: logs/app.log   # Path to log file
-INPUT_FILE: data/input/contacts.csv           # Input file path
-ANALYZED_FILE: data/processed/analyzed_contacts.csv  # Analysis output path
-CLEANED_FILE: data/processed/cleaned_contacts.csv    # Cleaned output path
-PROMPT_FILE: src/prompts/analyze.yaml         # Analysis prompt file path
+```
+MODEL_NAME=llama3.2        # The Ollama model to use
+TEMPERATURE=0.1          # Temperature setting for LLM responses
+CHUNK_SIZE=5            # Number of contacts to process in each batch
 ```
 
 ## Input/Output Structure

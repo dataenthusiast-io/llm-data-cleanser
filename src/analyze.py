@@ -1,36 +1,39 @@
-import logging
 from typing import List, Dict
 import json
 from tqdm import tqdm
 import csv
-import yaml
 from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from pathlib import Path
 import sys
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
+# Constants
+LOG_FILE = str(project_root / "logs/app.log")
+INPUT_FILE = str(project_root / "input/contacts.csv")
+ANALYZED_FILE = str(project_root / "output/analyzed_contacts.csv")
+CLEANED_FILE = str(project_root / "output/cleaned_contacts.csv")
+PROMPT_FILE = str(Path(__file__).parent / "prompts/analyze.yaml")
+
+# Environment variables
+MODEL_NAME = os.getenv("MODEL_NAME")
+TEMPERATURE = float(os.getenv("TEMPERATURE"))
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE"))
+
 from libs.utils import (
     setup_logging, read_csv, chunk_contacts, 
     parse_llm_response, load_prompt, logger
 )
-
-# Load config directly
-CONFIG_PATH = Path(__file__).parent / "config.yaml"
-with open(CONFIG_PATH, 'r') as f:
-    SETTINGS = yaml.safe_load(f)
-
-# Convert relative paths to absolute paths from project root
-SETTINGS["LOG_FILE"] = str(project_root / SETTINGS["LOG_FILE"].lstrip("../"))
-SETTINGS["INPUT_FILE"] = str(project_root / SETTINGS["INPUT_FILE"].lstrip("../"))
-SETTINGS["ANALYZED_FILE"] = str(project_root / SETTINGS["ANALYZED_FILE"].lstrip("../"))
-SETTINGS["CLEANED_FILE"] = str(project_root / SETTINGS["CLEANED_FILE"].lstrip("../"))
-SETTINGS["PROMPT_FILE"] = str(Path(__file__).parent / SETTINGS["PROMPT_FILE"])
 
 def setup_llm_chain(prompt_file: str):
     """Setup LangChain processing chain."""
@@ -43,8 +46,8 @@ def setup_llm_chain(prompt_file: str):
     ])
 
     model = ChatOllama(
-        model=SETTINGS["MODEL_NAME"], 
-        temperature=SETTINGS["TEMPERATURE"]
+        model=MODEL_NAME, 
+        temperature=TEMPERATURE
     )
     
     chain = (
@@ -119,16 +122,16 @@ def save_analyzed_results(results: List[Dict], original_contacts: List[Dict], ou
         raise
 
 def main():
-    setup_logging(SETTINGS["LOG_FILE"])
+    setup_logging(LOG_FILE)
     logger.info("Starting contact analysis")
     
     try:
-        contacts = read_csv(SETTINGS["INPUT_FILE"])
-        chunks = chunk_contacts(contacts, SETTINGS["CHUNK_SIZE"])
-        chain = setup_llm_chain(SETTINGS["PROMPT_FILE"])
+        contacts = read_csv(INPUT_FILE)
+        chunks = chunk_contacts(contacts, CHUNK_SIZE)
+        chain = setup_llm_chain(PROMPT_FILE)
         results = process_chunks(chunks, chain)
-        save_analyzed_results(results, contacts, SETTINGS["ANALYZED_FILE"])
-        logger.info(f"Analysis complete. Results saved to {SETTINGS['ANALYZED_FILE']}")
+        save_analyzed_results(results, contacts, ANALYZED_FILE)
+        logger.info(f"Analysis complete. Results saved to {ANALYZED_FILE}")
     except Exception as e:
         logger.error(f"Fatal error: {str(e)}")
         raise
